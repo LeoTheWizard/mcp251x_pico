@@ -17,7 +17,9 @@
 #define CAN_EFF_MASK 0x1FFFFFFFUL /* extended frame format (EFF) */
 #define CAN_ERR_MASK 0x1FFFFFFFUL /* EFF, RTR, ERR flags */
 
-typedef enum 
+#define CAN_MAX_DATA_LENGTH 8
+
+typedef enum
 {
     CAN_BITRATE_1000KBPS,
     CAN_BITRATE_800KBPS,
@@ -26,11 +28,11 @@ typedef enum
     CAN_BITRATE_125KBPS
 } can_bitrate;
 
-typedef struct 
+typedef struct
 {
     uint32_t id;
     uint8_t dlc;
-    uint8_t data[8];
+    uint8_t data[CAN_MAX_DATA_LENGTH];
 } can_frame;
 
 static inline uint32_t can_frame_get_msg_id(const can_frame *frame)

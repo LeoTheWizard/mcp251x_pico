@@ -221,6 +221,7 @@ extern "C"
      * @brief Transmit a frame onto the canbus with priority.
      * @param device The mcp251x device.
      * @param frame A pointer to a can_frame to transmit.
+     * @param priority The priority of the frame. Higher priority is transmitted first.
      * @return mcp251x error. If successfully transmitted then MCP251x_ERR_OK. Otherwise check enum.
      */
     mcp251x_error mcp251x_send_frame_priority(MCP251x *device, const can_frame *frame, const mcp251x_transmit_priority priority);

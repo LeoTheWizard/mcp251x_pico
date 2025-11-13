@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include "hardware/spi.h"
 #include "hardware/gpio.h"
 #include "mcp251x_pico/spi.h"
@@ -21,7 +22,7 @@ spi_instance_t *spi_instance_init(spi_interface hardware, const uint8_t sclk_pin
     if (!dev)
         return NULL;
 
-    __builtin_memset(dev, 0, sizeof(*dev));
+    memset(dev, 0, sizeof(*dev));
 
     switch (hardware)
     {

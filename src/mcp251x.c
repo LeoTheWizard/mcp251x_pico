@@ -306,7 +306,7 @@ static void mcp251x_request_to_send(spi_instance_t *dev, const uint8_t tx_buffer
 
 /**
  * @brief Load a transmit buffer with data.
- * @note This is more efficient than setting the respective registers as it uses less spi instructions and will automatically request to send the buffer once the CS has gone back high.
+ * @note This is more efficient than setting the respective registers as it uses less spi instructions.
  * @param dev The spi device context.
  * @param tx_buffer_num The transmit buffer number to load.
  * @param transmit_buffer The data to load into the transmit buffer.
@@ -336,10 +336,10 @@ static void mcp251x_read_rx_buffer(spi_instance_t *dev, uint8_t rxb_num, uint8_t
     spi_instance_transmit_byte(dev, cmd);
 
     spi_device_read(dev, buffer_data, 5);
-    if ((buffer_data[MCP251x_BUFFER_DLC] & 0xF) < 8)
+    if ((buffer_data[MCP251x_BUFFER_DLC] & 0xF) < CAN_MAX_DATA_LENGTH)
         spi_instance_recieve(dev, buffer_data + 5, buffer_data[MCP251x_BUFFER_DLC] & 0xF);
     else
-        spi_instance_recieve(dev, buffer_data + 5, 8);
+        spi_instance_recieve(dev, buffer_data + 5, CAN_MAX_DATA_LENGTH);
 
     spi_instance_chip_disable(dev);
 }
@@ -570,26 +570,26 @@ void mcp251x_set_rx_rollover(MCP251x *device, bool value)
     mcp251x_modify_register(device->config.spi_dev, MCP251x_REG_RXB0CTRL, 0x04, value << 2);
 }
 
-mcp251x_error mcp251x_send_frame(MCP251x *device, const can_frame *frame)
+static mcp251x_error mcp251x_get_available_tx_buffer(MCP251x *device, uint8_t *txbn)
 {
-    if (frame->dlc > 8)
-        return MCP251x_ERR_INVALID; // Checks data length is within MAX_DLEN = 8
-
-    // Find available TX buffer
-    int TXBn = -1;
+    *txbn = -1;
     uint8_t status = mcp251x_read_status(device->config.spi_dev);
     for (int i = 0; i < 3; i++)
     {
         if ((status & MCP251x_STATUS_TXREQ_MASK(i)) == 0)
         {
-            TXBn = i;
+            *txbn = i;
             break;
         }
     }
-    if (TXBn == -1)
+    if (*txbn == -1)
         return MCP251x_ERR_FULL;
 
-    // Populate Frame Bytes
+    return MCP251x_ERR_SUCCESS;
+}
+
+static mcp251x_error mcp251x_send_frame_on_buf(MCP251x *device, const can_frame *frame, uint8_t txbn)
+{
     uint8_t frame_buffer[MCP251x_BUFFER_SIZE - 1];
 
     mcp251x_id_to_buffer(frame_buffer, frame->id);
@@ -600,14 +600,47 @@ mcp251x_error mcp251x_send_frame(MCP251x *device, const can_frame *frame)
     memcpy(frame_buffer + MCP251x_BUFFER_DATA, frame->data, frame->dlc);
 
     // Populate transmit buffer & Request transmit
-    mcp251x_load_tx_buffer(device->config.spi_dev, TXBn, frame_buffer);
-    mcp251x_request_to_send(device->config.spi_dev, TXBn);
+    mcp251x_load_tx_buffer(device->config.spi_dev, txbn, frame_buffer);
+    mcp251x_request_to_send(device->config.spi_dev, txbn);
 
-    uint8_t ctrl = mcp251x_read_register(device->config.spi_dev, MCP251x_REG_TXB0CTRL + (TXBn * 16));
+    uint8_t ctrl = mcp251x_read_register(device->config.spi_dev, MCP251x_REG_TXB0CTRL + (txbn * 16));
     if ((ctrl & (MCP251x_TXB_ABTF | MCP251x_TXB_MLOA | MCP251x_TXB_TXERR)) != 0)
         return MCP251x_ERR_FAIL;
 
     return MCP251x_ERR_SUCCESS;
+}
+
+mcp251x_error mcp251x_send_frame(MCP251x *device, const can_frame *frame)
+{
+    if (frame->dlc > CAN_MAX_DATA_LENGTH)
+        return MCP251x_ERR_INVALID; // Checks data length is within CAN_MAX_DATA_LENGTH = 8
+
+    // Find available TX buffer
+    int TXBn = 0;
+    mcp251x_error err = mcp251x_get_available_tx_buffer(device, &TXBn);
+    if (err != MCP251x_ERR_SUCCESS)
+        return err;
+
+    // Send frame.
+    return mcp251x_send_frame_on_buf(device, frame, TXBn);
+}
+
+mcp251x_error mcp251x_send_frame_priority(MCP251x *device, const can_frame *frame, const mcp251x_transmit_priority priority)
+{
+    if (frame->dlc > CAN_MAX_DATA_LENGTH)
+        return MCP251x_ERR_INVALID; // Checks data length is within CAN_MAX_DATA_LENGTH = 8
+
+    // Find available TX buffer
+    int TXBn = 0;
+    mcp251x_error err = mcp251x_get_available_tx_buffer(device, &TXBn);
+    if (err != MCP251x_ERR_SUCCESS)
+        return err;
+
+    // Set priority.
+    mcp251x_modify_register(device->config.spi_dev, MCP251x_REG_TXB0CTRL + (TXBn * 16), 0x03, priority);
+
+    // Send frame.
+    return mcp251x_send_frame_on_buf(device, frame, TXBn);
 }
 
 static void mcp251x_read_frame_buffer(MCP251x *device, int rxbn, can_frame *frame)
