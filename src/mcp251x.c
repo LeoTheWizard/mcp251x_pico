@@ -354,7 +354,7 @@ struct _mcp251x_device
 MCP251x mcp251x_get_device()
 {
     MCP251x dev;
-    __builtin_memset(&dev, 0, sizeof(dev)); // zero initialise.
+    memset(&dev, 0, sizeof(dev)); // zero initialise.
 
     return dev;
 }
@@ -392,7 +392,7 @@ mcp251x_error mcp251x_reset(MCP251x *device)
     mcp251x_sleep_us(100);
 
     uint8_t zeros[MCP251x_BUFFER_SIZE];
-    __builtin_memset(zeros, 0, sizeof(zeros));
+    memset(zeros, 0, sizeof(zeros));
 
     mcp251x_set_registers(device->config.spi_dev, MCP251x_REG_TXB0CTRL, zeros, MCP251x_BUFFER_SIZE);
     mcp251x_set_registers(device->config.spi_dev, MCP251x_REG_TXB1CTRL, zeros, MCP251x_BUFFER_SIZE);
@@ -597,7 +597,7 @@ mcp251x_error mcp251x_send_frame(MCP251x *device, const can_frame *frame)
     bool rtr = (frame->id & CAN_RTR_FLAG);
     frame_buffer[MCP251x_BUFFER_DLC] = rtr ? (frame->dlc | 64) : frame->dlc; // Set rtr bit
 
-    __builtin_memcpy(frame_buffer + MCP251x_BUFFER_DATA, frame->data, frame->dlc);
+    memcpy(frame_buffer + MCP251x_BUFFER_DATA, frame->data, frame->dlc);
 
     // Populate transmit buffer & Request transmit
     mcp251x_load_tx_buffer(device->config.spi_dev, TXBn, frame_buffer);
@@ -622,7 +622,7 @@ static void mcp251x_read_frame_buffer(MCP251x *device, int rxbn, can_frame *fram
 
     frame->id = id;
     frame->dlc = frame_buffer[MCP251x_BUFFER_DLC] & 0xF;
-    __builtin_memcpy(frame->data, frame_buffer + MCP251x_BUFFER_DATA, frame->dlc);
+    memcpy(frame->data, frame_buffer + MCP251x_BUFFER_DATA, frame->dlc);
 }
 
 mcp251x_error mcp251x_read_frame(MCP251x *device, can_frame *frame)
