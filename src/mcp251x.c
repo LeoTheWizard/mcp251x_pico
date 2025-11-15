@@ -440,13 +440,91 @@ typedef struct
 } mcp251x_clock_cfg;
 
 // TODO: Finish the clock conmfigurations.
-static const mcp251x_clock_cfg s_mcp251x_clockconfigs_8mhz[2] = {{0x82, 0x90, 0x00}, {0x80, 0x80, 0x00}};
-static const mcp251x_clock_cfg s_mcp251x_clockconfigs_12mhz[2] = {{0x84, 0x84, 0x00}, {0x80, 0x82, 0x00}};
-static const mcp251x_clock_cfg s_mcp251x_clockconfigs_20mhz[2] = {{0x87, 0xFA, 0x00}, {0x82, 0xD9, 0x00}};
+static const mcp251x_clock_cfg s_mcp251x_clockconfigs_8mhz[CAN_BITRATE_MAX] = {
+    {0x80, 0x80, 0x00}, // 1MBPS
+    {0, 0, 0},          // 800KBPS
+    {0x82, 0x90, 0x00}, // 500KBPS
+    {0x85, 0xB1, 0x00}, // 250KBPS
+    {0x86, 0xB4, 0x00}, // 200KBPS
+    {0x85, 0xB1, 0x01}, // 125KBPS
+    {0x86, 0xB4, 0x01}, // 100KBPS
+    {0x87, 0xBF, 0x01}, // 80KBPS
+    {0x86, 0xB4, 0x03}, // 50KBPS
+    {0x87, 0xBF, 0x03}, // 40KBPS
+    {0x87, 0xBF, 0x07}, // 20KBPS
+    {0x87, 0xBF, 0x0F}, // 10KBPS
+    {0x87, 0xBF, 0x1F}  // 5KBPS
+};
+
+static const mcp251x_clock_cfg s_mcp251x_clockconfigs_10mhz[CAN_BITRATE_MAX] = {
+    {0x80, 0xC8, 0x00}, // 1MBPS
+    {0, 0, 0},          // 800KBPS
+    {0x82, 0xD9, 0x40}, // 500KBPS
+    {0x82, 0xD9, 0x41}, // 250KBPS
+    {0, 0, 0},          // 200KBPS
+    {0x82, 0xD9, 0x43}, // 125KBPS
+    {0, 0, 0},          // 100KBPS
+    {0, 0, 0},          // 80KBPS
+    {0, 0, 0},          // 50KBPS
+    {0, 0, 0},          // 40KBPS
+    {0, 0, 0},          // 20KBPS
+    {0, 0, 0},          // 10KBPS
+    {0, 0, 0}           // 5KBPS
+};
+
+static const mcp251x_clock_cfg s_mcp251x_clockconfigs_12mhz[CAN_BITRATE_MAX] = {
+    {0x80, 0x82, 0x00}, // 1MBPS
+    {0, 0, 0},          // 800KBPS
+    {0x84, 0x84, 0x00}, // 500KBPS
+    {0, 0, 0},          // 250KBPS
+    {0, 0, 0},          // 200KBPS
+    {0, 0, 0},          // 125KBPS
+    {0, 0, 0},          // 100KBPS
+    {0, 0, 0},          // 80KBPS
+    {0, 0, 0},          // 50KBPS
+    {0, 0, 0},          // 40KBPS
+    {0, 0, 0},          // 20KBPS
+    {0, 0, 0},          // 10KBPS
+    {0, 0, 0}           // 5KBPS
+};
+
+static const mcp251x_clock_cfg s_mcp251x_clockconfigs_16mhz[CAN_BITRATE_MAX] = {
+    {0x82, 0xD0, 0x00}, // 1MBPS
+    {0, 0, 0},          // 800KBPS
+    {0x86, 0xF0, 0x00}, // 500KBPS
+    {0x85, 0xF1, 0x41}, // 250KBPS
+    {0x87, 0xFA, 0x01}, // 200KBPS
+    {0x86, 0xF0, 0x03}, // 125KBPS
+    {0x87, 0xFA, 0x03}, // 100KBPS
+    {0x87, 0xFF, 0x03}, // 80KBPS
+    {0x87, 0xFA, 0x07}, // 50KBPS
+    {0x87, 0xFF, 0x07}, // 40KBPS
+    {0x87, 0xFF, 0x0F}, // 20KBPS
+    {0x87, 0xFF, 0x1F}, // 10KBPS
+    {0x87, 0xFF, 0x3F}  // 5KBPS
+};
+
+static const mcp251x_clock_cfg s_mcp251x_clockconfigs_20mhz[CAN_BITRATE_MAX] = {
+    {0x82, 0xD9, 0x00}, // 1MBPS
+    {0, 0, 0},          // 800KBPS
+    {0x87, 0xFA, 0x00}, // 500KBPS
+    {0x86, 0xFB, 0x41}, // 250KBPS
+    {0x87, 0xFF, 0x01}, // 200KBPS
+    {0x87, 0xFA, 0x03}, // 125KBPS
+    {0x87, 0xFA, 0x04}, // 100KBPS
+    {0x87, 0xFF, 0x04}, // 80KBPS
+    {0x87, 0xFA, 0x09}, // 50KBPS
+    {0x87, 0xFF, 0x09}, // 40KBPS
+    {0, 0, 0},          // 20KBPS
+    {0, 0, 0},          // 10KBPS
+    {0, 0, 0}           // 5KBPS
+};
 
 static const mcp251x_clock_cfg *s_mcp251x_clock_config_map[] = {
     s_mcp251x_clockconfigs_8mhz,
+    s_mcp251x_clockconfigs_10mhz,
     s_mcp251x_clockconfigs_12mhz,
+    s_mcp251x_clockconfigs_16mhz,
     s_mcp251x_clockconfigs_20mhz};
 
 mcp251x_error mcp251x_set_bitrate(MCP251x *device, const can_bitrate bitrate)
@@ -456,6 +534,9 @@ mcp251x_error mcp251x_set_bitrate(MCP251x *device, const can_bitrate bitrate)
 
     // Look up clock configuration values from map.
     mcp251x_clock_cfg cfg = s_mcp251x_clock_config_map[device->config.crystal_oscillator][bitrate];
+
+    if (cfg.cnf1 == 0 && cfg.cnf2 == 0 && cfg.cnf3 == 0)
+        return MCP251x_ERR_NOT_SUPPORTED; // Oscillator & Bitrate configuration not supported.
 
     mcp251x_set_registers(device->config.spi_dev, MCP251x_REG_CNF3, (uint8_t *)&cfg, 3);
     return MCP251x_ERR_SUCCESS;

@@ -1,1 +1,2 @@
-# C driver for MCP251x Family of CAN Controllers.
+# MCP251x Family C driver for CAN on the Raspberry Pico.
+
