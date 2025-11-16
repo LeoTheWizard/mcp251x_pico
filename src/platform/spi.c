@@ -2,7 +2,7 @@
 #include <string.h>
 #include "hardware/spi.h"
 #include "hardware/gpio.h"
-#include "mcp251x_pico/spi.h"
+#include "mcp251x/platform/spi.h"
 
 struct spi_instance
 {

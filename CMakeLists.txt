@@ -8,9 +8,9 @@ set(CMAKE_C_STANDARD 17)
 set(CMAKE_CXX_STANDARD 17)
 
 # Check for SDK.
-if (NOT DEFINED PICO_SDK_INITIALIZED)
-    message(FATAL_ERROR "MISSING PICO SDK, please include library *after* initializing the pico_sdk.")
-endif()
+#if (NOT DEFINED PICO_SDK_INITIALIZED)
+#    message(FATAL_ERROR "MISSING PICO SDK, please include library *after* initializing the pico_sdk.")
+#endif()
 
 # Add sources.
 add_library(${LIBRARY_NAME}

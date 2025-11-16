@@ -335,7 +335,7 @@ static void mcp251x_read_rx_buffer(spi_instance_t *dev, uint8_t rxb_num, uint8_t
     spi_instance_chip_enable(dev);
     spi_instance_transmit_byte(dev, cmd);
 
-    spi_device_read(dev, buffer_data, 5);
+    spi_instance_recieve(dev, buffer_data, 5);
     if ((buffer_data[MCP251x_BUFFER_DLC] & 0xF) < CAN_MAX_DATA_LENGTH)
         spi_instance_recieve(dev, buffer_data + 5, buffer_data[MCP251x_BUFFER_DLC] & 0xF);
     else
@@ -351,10 +351,10 @@ struct _mcp251x_device
     bool initialised;
 };
 
-MCP251x mcp251x_get_device()
+MCP251x *mcp251x_get_device()
 {
-    MCP251x dev;
-    memset(&dev, 0, sizeof(dev)); // zero initialise.
+    MCP251x *dev = malloc(sizeof(MCP251x));
+    memset(dev, 0, sizeof(MCP251x)); // zero initialise.
 
     return dev;
 }
@@ -374,11 +374,13 @@ mcp251x_error mcp251x_init(MCP251x *device, mcp251x_config *config)
     return MCP251x_ERR_SUCCESS;
 };
 
-void mcp251x_deinit(MCP251x *device)
+void mcp251x_destroy(MCP251x *device)
 {
     // Place the chip into a low power mode.
     if (device->initialised)
         mcp251x_set_mode(device, MCP251x_MODE_SLEEP);
+
+    free(device);
 }
 
 mcp251x_error mcp251x_reset(MCP251x *device)
@@ -620,19 +622,22 @@ static uint32_t mcp251x_buffer_to_id(const uint8_t *buffer, uint8_t ctrl)
     return can_id;
 }
 
-void mcp251x_set_rx_mask(MCP251x *device, uint8_t mask_num, uint32_t id_mask)
+mcp251x_error mcp251x_set_rx_mask(MCP251x *device, uint8_t mask_num, uint32_t id_mask)
 {
     if (mask_num > 1)
-        return;
+        return MCP251x_ERR_INVALID;
+
     mcp251x_register reg_addr = MCP251x_REG_RXM0EID0 + (mask_num * 0x04);
 
     uint8_t id_buffer[4];
-    id_to_mcp251x_buffer(id_buffer, id_mask);
+    mcp251x_id_to_buffer(id_buffer, id_mask);
 
-    mcp251x_write_registers(device->config.spi_dev, reg_addr, id_buffer, 4);
+    mcp251x_set_registers(device->config.spi_dev, reg_addr, id_buffer, 4);
+
+    return MCP251x_ERR_SUCCESS;
 }
 
-void mcp251x_set_rx_filter(MCP251x *device, uint8_t filter_num, uint32_t id_filter)
+mcp251x_error mcp251x_set_rx_filter(MCP251x *device, uint8_t filter_num, uint32_t id_filter)
 {
     if (filter_num > 5) // Invalid filter number.
         return MCP251x_ERR_INVALID;
@@ -652,7 +657,9 @@ void mcp251x_set_rx_filter(MCP251x *device, uint8_t filter_num, uint32_t id_filt
     mcp251x_id_to_buffer(id_buffer, id_filter);
 
     // Write filter to registers.
-    mcp251x_write_registers(device->config.spi_dev, filter_regs[filter_num], id_buffer, 4);
+    mcp251x_set_registers(device->config.spi_dev, filter_regs[filter_num], id_buffer, 4);
+
+    return MCP251x_ERR_SUCCESS;
 }
 
 void mcp251x_set_rx_rollover(MCP251x *device, bool value)
@@ -753,7 +760,7 @@ mcp251x_error mcp251x_send_frame(MCP251x *device, const can_frame *frame)
         return MCP251x_ERR_INVALID; // Checks data length is within CAN_MAX_DATA_LENGTH = 8
 
     // Find available TX buffer
-    int TXBn = 0;
+    uint8_t TXBn = 0;
     mcp251x_error err = mcp251x_get_available_tx_buffer(device, &TXBn);
     if (err != MCP251x_ERR_SUCCESS)
         return err;
@@ -768,7 +775,7 @@ mcp251x_error mcp251x_send_frame_priority(MCP251x *device, const can_frame *fram
         return MCP251x_ERR_INVALID; // Checks data length is within CAN_MAX_DATA_LENGTH = 8
 
     // Find available TX buffer
-    int TXBn = 0;
+    uint8_t TXBn = 0;
     mcp251x_error err = mcp251x_get_available_tx_buffer(device, &TXBn);
     if (err != MCP251x_ERR_SUCCESS)
         return err;
@@ -888,7 +895,7 @@ uint8_t mcp251x_get_interrupts(MCP251x *device)
 
 void mcp251x_clear_interrupts(MCP251x *device)
 {
-    mcp251x_write_register(device->config.spi_dev, MCP251x_REG_CANINTF, 0);
+    mcp251x_set_register(device->config.spi_dev, MCP251x_REG_CANINTF, 0);
 }
 
 uint8_t mcp251x_get_interrupt_mask(MCP251x *device)

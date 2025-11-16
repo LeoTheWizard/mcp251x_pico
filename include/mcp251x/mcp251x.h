@@ -13,8 +13,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "mcp251x/platform/spi.h"
-#include "mcp251x/can.h"
+#include "platform/spi.h"
+#include "can.h"
+
+#define MCP251x_LIB_VERSION "1.0.0"
 
 #ifdef __cplusplus
 extern "C"
@@ -78,12 +80,12 @@ extern "C"
     typedef struct _mcp251x_device MCP251x;
 
     /**
-     * @brief Get uninitialised MCP251x device context.
+     * @brief Allocates an uninitialised MCP251x device context.
      */
-    MCP251x mcp251x_get_device();
+    MCP251x *mcp251x_get_device();
 
     /**
-     * @brief Create a mcp251x device context and initialize the chip.
+     * @brief Initialise the mcp251x chip.
      * @param device The mcp251x device to init.
      * @param config The mcp251x configuration structure.
      * @return MCP251x_ERR_OK if successfully initialised.
@@ -92,11 +94,12 @@ extern "C"
     mcp251x_error mcp251x_init(MCP251x *device, mcp251x_config *config);
 
     /**
-     * @brief Deinitialise the chip & puts it to sleep.
+     * @brief Puts the chip to sleep and frees the device memory.
      * Night night...
      * @param device The mcp251x device.
+     * @warning Ensure to destroy the spi device after this call, otherwise there will be a use after free.
      */
-    void mcp251x_deinit(MCP251x *device);
+    void mcp251x_destroy(MCP251x *device);
 
     /**
      * @enum mcp251x_transmit_priority
@@ -225,7 +228,7 @@ extern "C"
      * @param id_mask The mask value to set.
      * @note Pair with setting a recieve filter to block certain can_ids from being recieved.
      */
-    void mcp251x_set_rx_mask(MCP251x *device, uint8_t mask_num, uint32_t id_mask);
+    mcp251x_error mcp251x_set_rx_mask(MCP251x *device, uint8_t mask_num, uint32_t id_mask);
 
     /**
      * @brief Set a recieve filter for incoming can frames.
@@ -234,7 +237,7 @@ extern "C"
      * @param id_filter The filter value to set.
      * @note A filter will allow a frame to be accepted if the can_id, post mask, is equal to its value. mask & filter == mask & id.
      */
-    void mcp251x_set_rx_filter(MCP251x *device, uint8_t filter_num, uint32_t id_filter);
+    mcp251x_error mcp251x_set_rx_filter(MCP251x *device, uint8_t filter_num, uint32_t id_filter);
 
     /**
      * @brief Transmit a frame onto the canbus.
