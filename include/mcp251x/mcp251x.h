@@ -32,7 +32,7 @@ extern "C"
         MCP251x_ERR_EMPTY,          // No more messages to read as Recieve buffers are empty.
         MCP251x_ERR_INVALID,        // Invalid parameters.
         MCP251x_ERR_FAIL,           // Operation failed.
-        MCP251x_ERR_NOT_SUPPORTED,  // Operation not supported by the controller model or config.
+        MCP251x_ERR_NOT_SUPPORTED,  // Operation not supported by the current config.
         MCP251x_ERR_NOT_INITIALISED // Device object passed into function, hasn't been initialised.
     } mcp251x_error;
 
@@ -185,6 +185,40 @@ extern "C"
     mcp251x_error mcp251x_set_clock_out(MCP251x *device, bool enabled, mcp251x_clkout_prescale prescale);
 
     /**
+     * @brief Set the RXB0 rollover enable flag. Allows frames to rollover into buffer 1 even if buffer 0 is full.
+     * @param device The mcp251x device.
+     * @param value If it should rollover.
+     */
+    void mcp251x_set_rx_rollover(MCP251x *device, bool value);
+
+    typedef enum
+    {
+        MCP251x_PIN_DISABLED,
+        MCP251x_PIN_BF_INTERRUPT,
+        MCP251x_PIN_DIGITAL_OUT
+    } mcp251x_pin_mode;
+
+    /**
+     * @brief Set the mode of an output pin on the mcp251x. There are only two pins.
+     * @param device The mcp251x device.
+     * @param pin_number The outpin pin, 0 or 1.
+     * @param mode The mode to set the pin to.
+     */
+    mcp251x_error mcp251x_pin_control(MCP251x *device, uint8_t pin_number, mcp251x_pin_mode mode);
+
+#define MCP251x_PIN_HIGH 1
+#define MCP251x_PIN_LOW 0
+
+    /**
+     * @brief Set the state of a digital output pin on the mcp251x.
+     * @warning Ensure pin is configured as digital output and not interrupt. See mcp251x_pin_control() to change mode.
+     * @param device The mcp251x device.
+     * @param pin_number The outpin pin, 0 or 1.
+     * @param state The state to set the pin to. High (true) or low (false).
+     */
+    mcp251x_error mcp251x_set_pin(MCP251x *device, uint8_t pin_number, bool state);
+
+    /**
      * @brief Set an identifier mask for incoming can frames for either recieve buffer 0 or 1.
      * @param device The mcp251x device.
      * @param mask_num The specific mask to change  (0 - 1).
@@ -201,13 +235,6 @@ extern "C"
      * @note A filter will allow a frame to be accepted if the can_id, post mask, is equal to its value. mask & filter == mask & id.
      */
     void mcp251x_set_rx_filter(MCP251x *device, uint8_t filter_num, uint32_t id_filter);
-
-    /**
-     * @brief Set the RXB0 rollover enable flag. Allows frames to rollover into buffer 1 even if buffer 0 is full.
-     * @param device The mcp251x device.
-     * @param value If it should rollover.
-     */
-    void mcp251x_set_rx_rollover(MCP251x *device, bool value);
 
     /**
      * @brief Transmit a frame onto the canbus.

@@ -41,7 +41,7 @@ typedef enum
     MCP251x_REG_RXF2EID8 = 0x0A,
     MCP251x_REG_RXF2EID0 = 0x0B,
 
-    MCP251x_REG_BFPCTRL = 0x0C,
+    MCP251x_REG_BFPCTRL = 0x0C, // Pin control & status register.
     MCP251x_REG_TXRTSCTRL = 0x0D,
 
     MCP251x_REG_CANSTAT = 0x0E, //  CAN Status
@@ -376,6 +376,7 @@ mcp251x_error mcp251x_init(MCP251x *device, mcp251x_config *config)
 
 void mcp251x_deinit(MCP251x *device)
 {
+    // Place the chip into a low power mode.
     if (device->initialised)
         mcp251x_set_mode(device, MCP251x_MODE_SLEEP);
 }
@@ -408,13 +409,15 @@ mcp251x_error mcp251x_reset(MCP251x *device)
 mcp251x_error mcp251x_set_mode(MCP251x *device, const mcp251x_operation_mode mode)
 {
     if (!device->initialised)
-        return MCP251x_ERR_NOT_INITIALISED;
+        return MCP251x_ERR_NOT_INITIALISED; // Device context is not initialised.
 
-    if (device->current_mode == mode) // Already in the requested mode.
-        return MCP251x_ERR_SUCCESS;
+    if (device->current_mode == mode)
+        return MCP251x_ERR_SUCCESS; // Already in the requested mode.
 
+    // Request operating mode.
     mcp251x_modify_register(device->config.spi_dev, MCP251x_REG_CANCTRL, CANCTRL_REQOP, mode);
 
+    // Wait for change to be made.
     for (uint8_t i = 0; i < 10; ++i)
     {
         uint8_t newmode = mcp251x_read_register(device->config.spi_dev, MCP251x_REG_CANSTAT);
@@ -423,12 +426,13 @@ mcp251x_error mcp251x_set_mode(MCP251x *device, const mcp251x_operation_mode mod
         if (newmode == mode)
         {
             device->current_mode = mode;
-            return MCP251x_ERR_SUCCESS;
+            return MCP251x_ERR_SUCCESS; // Operating mode has changed.
         }
 
         mcp251x_sleep_us(100);
     }
 
+    // Timed out, mode didn't change.
     return MCP251x_ERR_FAIL;
 }
 
@@ -477,7 +481,7 @@ static const mcp251x_clock_cfg s_mcp251x_clockconfigs_12mhz[CAN_BITRATE_MAX] = {
     {0, 0, 0},          // 800KBPS
     {0x84, 0x84, 0x00}, // 500KBPS
     {0, 0, 0},          // 250KBPS
-    {0, 0, 0},          // 200KBPS
+    {0x84, 0xF1, 0x41}, // 200KBPS * Used Calculator
     {0, 0, 0},          // 125KBPS
     {0, 0, 0},          // 100KBPS
     {0, 0, 0},          // 80KBPS
@@ -630,25 +634,77 @@ void mcp251x_set_rx_mask(MCP251x *device, uint8_t mask_num, uint32_t id_mask)
 
 void mcp251x_set_rx_filter(MCP251x *device, uint8_t filter_num, uint32_t id_filter)
 {
-    static const mcp251x_register filter_regs[6] =
-        {
-            MCP251x_REG_RXF0SIDH,
-            MCP251x_REG_RXF1SIDH,
-            MCP251x_REG_RXF2SIDH,
-            MCP251x_REG_RXF3SIDH,
-            MCP251x_REG_RXF4SIDH,
-            MCP251x_REG_RXF5SIDH,
-        };
+    if (filter_num > 5) // Invalid filter number.
+        return MCP251x_ERR_INVALID;
 
+    // Register map
+    static const mcp251x_register filter_regs[6] = {
+        MCP251x_REG_RXF0SIDH,
+        MCP251x_REG_RXF1SIDH,
+        MCP251x_REG_RXF2SIDH,
+        MCP251x_REG_RXF3SIDH,
+        MCP251x_REG_RXF4SIDH,
+        MCP251x_REG_RXF5SIDH,
+    };
+
+    // Convert filter id into the mcp251x buffer format.
     uint8_t id_buffer[4];
     mcp251x_id_to_buffer(id_buffer, id_filter);
 
+    // Write filter to registers.
     mcp251x_write_registers(device->config.spi_dev, filter_regs[filter_num], id_buffer, 4);
 }
 
 void mcp251x_set_rx_rollover(MCP251x *device, bool value)
 {
     mcp251x_modify_register(device->config.spi_dev, MCP251x_REG_RXB0CTRL, 0x04, value << 2);
+}
+
+enum mcp251x_bfpctrl_bits
+{
+    MCP251x_BFPCTRL_B0BFM = 0b00000001,
+    MCP251x_BFPCTRL_B1BFM = 0b00000010,
+    MCP251x_BFPCTRL_B0BFE = 0b00000100,
+    MCP251x_BFPCTRL_B1BFE = 0b00001000,
+    MCP251x_BFPCTRL_B0BFS = 0b00010000,
+    MCP251x_BFPCTRL_B1BFS = 0b00100000
+};
+
+mcp251x_error mcp251x_pin_control(MCP251x *device, uint8_t pin_number, mcp251x_pin_mode mode)
+{
+    if (pin_number > 1) // Invalid pin number.
+        return MCP251x_ERR_INVALID;
+
+    switch (mode)
+    {
+    case MCP251x_PIN_DISABLED:
+        mcp251x_modify_register(device->config.spi_dev, MCP251x_REG_BFPCTRL, MCP251x_BFPCTRL_B0BFE << pin_number, 0x00);
+        break;
+
+    case MCP251x_PIN_BF_INTERRUPT:
+    {
+        uint8_t mask = (MCP251x_BFPCTRL_B0BFE | MCP251x_BFPCTRL_B0BFM) << pin_number;
+        mcp251x_modify_register(device->config.spi_dev, MCP251x_REG_BFPCTRL, mask, mask);
+        break;
+    }
+    case MCP251x_PIN_DIGITAL_OUT:
+    {
+        // Enable pin, set operation mode to digital output, clear pin value to low.
+        uint8_t mask = (MCP251x_BFPCTRL_B0BFE | MCP251x_BFPCTRL_B0BFM | MCP251x_BFPCTRL_B0BFS) << pin_number;
+        mcp251x_modify_register(device->config.spi_dev, MCP251x_REG_BFPCTRL, mask, MCP251x_BFPCTRL_B0BFE << pin_number);
+        break;
+    }
+    }
+    return MCP251x_ERR_SUCCESS;
+}
+
+mcp251x_error mcp251x_set_pin(MCP251x *device, uint8_t pin_number, bool state)
+{
+    if (pin_number > 1) // Invalid pin number.
+        return MCP251x_ERR_INVALID;
+
+    mcp251x_modify_register(device->config.spi_dev, MCP251x_REG_BFPCTRL, MCP251x_BFPCTRL_B0BFS << pin_number, (MCP251x_BFPCTRL_B0BFS << pin_number) * state);
+    return MCP251x_ERR_SUCCESS;
 }
 
 static mcp251x_error mcp251x_get_available_tx_buffer(MCP251x *device, uint8_t *txbn)
