@@ -39,6 +39,11 @@ extern "C"
     } mcp251x_error;
 
     /**
+     * @brief Get the string of an error from enum.
+     */
+    const char *mcp251x_strerror(mcp251x_error error);
+
+    /**
      * @enum mcp251x_model
      * @brief The different models in the mcp251x CAN controller family.
      */
@@ -97,7 +102,7 @@ extern "C"
      * @brief Puts the chip to sleep and frees the device memory.
      * Night night...
      * @param device The mcp251x device.
-     * @warning Ensure to destroy the spi device after this call, otherwise there will be a use after free.
+     * @warning Ensure to destroy the spi device *after* this call, otherwise there will be a use after free.
      */
     void mcp251x_destroy(MCP251x *device);
 
@@ -146,9 +151,9 @@ extern "C"
 
     /**
      * @brief Set the CAN bitrate.
+     * @note This function will set config mode.
      * @param device The mcp251x device.
      * @param bitrate The required bitrate on the canbus.
-     * @warning !! Requires the mcp251x to be in config mode to be successful. !!
      * @return
      */
     mcp251x_error mcp251x_set_bitrate(MCP251x *device, const can_bitrate bitrate);
@@ -227,6 +232,7 @@ extern "C"
      * @param mask_num The specific mask to change  (0 - 1).
      * @param id_mask The mask value to set.
      * @note Pair with setting a recieve filter to block certain can_ids from being recieved.
+     * This function will set config mode.
      */
     mcp251x_error mcp251x_set_rx_mask(MCP251x *device, uint8_t mask_num, uint32_t id_mask);
 
@@ -236,6 +242,7 @@ extern "C"
      * @param filter_num The specific filter (0 - 5).
      * @param id_filter The filter value to set.
      * @note A filter will allow a frame to be accepted if the can_id, post mask, is equal to its value. mask & filter == mask & id.
+     * This function will set config mode.
      */
     mcp251x_error mcp251x_set_rx_filter(MCP251x *device, uint8_t filter_num, uint32_t id_filter);
 
@@ -244,6 +251,7 @@ extern "C"
      * @param device The mcp251x device.
      * @param frame A pointer to a can_frame to transmit.
      * @return mcp251x error. If successfully transmitted then MCP251x_ERR_OK. Otherwise check enum.
+     * @warning Ensure mcp251x is in normal/loopback mode if you want frames to actually be transmitted.
      */
     mcp251x_error mcp251x_send_frame(MCP251x *device, const can_frame *frame);
 
@@ -253,6 +261,7 @@ extern "C"
      * @param frame A pointer to a can_frame to transmit.
      * @param priority The priority of the frame. Higher priority is transmitted first.
      * @return mcp251x error. If successfully transmitted then MCP251x_ERR_OK. Otherwise check enum.
+     * @warning Ensure mcp251x is in normal/loopback mode if you want frames to actually be transmitted.
      */
     mcp251x_error mcp251x_send_frame_priority(MCP251x *device, const can_frame *frame, const mcp251x_transmit_priority priority);
 
@@ -276,6 +285,7 @@ extern "C"
      * @param device The mcp251x device.
      * @param frame A pointer to a can_frame structure to read the frame into.
      * @return MCP251x_ERROR_OK if successfully recieved a frame.
+     * @warning Ensure mcp251x is in listen-only, loopback or normal mode in order for frames on the canbus to be recieved into the rx buffers.
      */
     mcp251x_error mcp251x_read_frame(MCP251x *device, can_frame *frame);
 
@@ -286,6 +296,7 @@ extern "C"
      * @param frame_count Set to how many frames have been read.
      * @note Only two available frame buffers, so array size only needs to be two & frame_count will be 0 - 2.
      * @return mcp251x error. MCP251x_ERROR_RXB_EMPTY if there are no frames.
+     * @warning Ensure mcp251x is in listen-only, loopback or normal mode in order for frames on the canbus to be recieved into the rx buffers.
      */
     mcp251x_error mcp251x_read_all_frames(MCP251x *device, can_frame *frame_buffer, int *frame_count);
 

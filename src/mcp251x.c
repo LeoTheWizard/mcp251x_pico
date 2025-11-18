@@ -11,6 +11,23 @@
 
 #define MCP251x_BUFFER_SIZE 14
 
+const char *mcp251x_strerror(mcp251x_error error)
+{
+    if (error > 6)
+        return "UNKNOWN";
+
+    static const char *error_strings[] = {
+        "Success",
+        "Buffer full",
+        "Buffer empty",
+        "Invalid parameter",
+        "Failure",
+        "Not supported",
+        "Device not initialised"};
+
+    return error_strings[error];
+}
+
 typedef enum
 {
     MCP251x_SPI_RESET = 0xC0,       //  software reset
@@ -538,6 +555,10 @@ mcp251x_error mcp251x_set_bitrate(MCP251x *device, const can_bitrate bitrate)
     if (!device->initialised)
         return MCP251x_ERR_NOT_INITIALISED;
 
+    // Ensure config mode.
+    if (device->current_mode != MCP251x_MODE_CONFIG)
+        mcp251x_set_mode(device, MCP251x_MODE_CONFIG);
+
     // Look up clock configuration values from map.
     mcp251x_clock_cfg cfg = s_mcp251x_clock_config_map[device->config.crystal_oscillator][bitrate];
 
@@ -627,6 +648,10 @@ mcp251x_error mcp251x_set_rx_mask(MCP251x *device, uint8_t mask_num, uint32_t id
     if (mask_num > 1)
         return MCP251x_ERR_INVALID;
 
+    // Ensure config mode.
+    if (device->current_mode != MCP251x_MODE_CONFIG)
+        mcp251x_set_mode(device, MCP251x_MODE_CONFIG);
+
     mcp251x_register reg_addr = MCP251x_REG_RXM0EID0 + (mask_num * 0x04);
 
     uint8_t id_buffer[4];
@@ -641,6 +666,10 @@ mcp251x_error mcp251x_set_rx_filter(MCP251x *device, uint8_t filter_num, uint32_
 {
     if (filter_num > 5) // Invalid filter number.
         return MCP251x_ERR_INVALID;
+
+    // Ensure config mode.
+    if (device->current_mode != MCP251x_MODE_CONFIG)
+        mcp251x_set_mode(device, MCP251x_MODE_CONFIG);
 
     // Register map
     static const mcp251x_register filter_regs[6] = {
