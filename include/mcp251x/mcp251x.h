@@ -1,4 +1,28 @@
 /**
+ * MIT License
+
+ * @copyright (c) 2025 Leo Walker
+
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/**
  * @file mcp251x.h
  * @brief C Library for driving the MicroChip MCP251x family of CAN controllers, specifically for the raspberry pico.
  * @author Leo Walker - leowalk183@gmail.com
@@ -6,6 +30,8 @@
  * @see mcp251x.c & can.h & spi.h
  *      Also see README.md for usage.
  * @cite https://ww1.microchip.com/downloads/aemDocuments/documents/APID/ProductDocuments/DataSheets/MCP2515-Family-Data-Sheet-DS20001801K.pdf
+ *
+ * @details
  */
 
 #pragma once
@@ -56,7 +82,7 @@ extern "C"
 
     /**
      * @enum mcp251x_crystal_frequency
-     * @brief Physical oscillator source frequency for the mcp251x chip.
+     * @brief External oscillator source frequency for the mcp251x chip.
      */
     typedef enum
     {
@@ -79,8 +105,8 @@ extern "C"
     } mcp251x_config;
 
     /**
-     * @brief Represents a mcp251x device.
-     * @note Pass this to the functions below to drive the controller.
+     * @brief Opaque type representing a mcp251x device.
+     * @note Pass this context to the functions below to drive the controller.
      */
     typedef struct _mcp251x_device MCP251x;
 
@@ -125,12 +151,11 @@ extern "C"
      */
     typedef enum
     {
-        MCP251x_MODE_NORMAL = 0x00,
-        MCP251x_MODE_SLEEP = 0x20,
-        MCP251x_MODE_LOOPBACK = 0x40,
-        MCP251x_MODE_LISTENONLY = 0x60,
-        MCP251x_MODE_CONFIG = 0x80,
-        MCP251x_MODE_POWERUP = 0xE0
+        MCP251x_MODE_NORMAL = 0x00,     // Normal CAN bus operation, transmit and recieve messages on the bus.
+        MCP251x_MODE_SLEEP = 0x20,      // Low power mode, SPI bus still active.
+        MCP251x_MODE_LOOPBACK = 0x40,   // Messages transmitted will be immediately recieved within the chip, used for testing.
+        MCP251x_MODE_LISTENONLY = 0x60, // Chip will not be active on the bus nor acknowledge any frames. The chip will only read whats being transmitted, including repeated frames.
+        MCP251x_MODE_CONFIG = 0x80,     // Set configuration only registers as the chip will not interact with the CAN bus in this mode.
     } mcp251x_operation_mode;
 
     /**
@@ -273,7 +298,7 @@ extern "C"
     uint8_t mcp251x_get_available_tx_buffer_count(MCP251x *device);
 
     /**
-     * @brief Aborts sending frames from all 3 transmission buffers. Blocks until all buffers are seen to be empty.
+     * @brief Aborts transmitting frames from all 3 transmission buffers. Blocks until all buffers are seen to be empty.
      * @param device The mcp251x device.
      * @return MCP251x_ERR_SUCCESS if messages were aborted successfully.
      *         MCP251x_ERR_FAIL if buffers weren't cleared in time.

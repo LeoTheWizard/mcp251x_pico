@@ -30,54 +30,54 @@ const char *mcp251x_strerror(mcp251x_error error)
 
 typedef enum
 {
-    MCP251x_SPI_RESET = 0xC0,       //  software reset
-    MCP251x_SPI_WRITE = 0x02,       //  write register
-    MCP251x_SPI_READ = 0x03,        //  read register
-    MCP251x_SPI_RTS = 0x80,         //  request to send
-    MCP251x_SPI_READ_STATUS = 0xA0, //  read status register
-    MCP251x_SPI_BIT_MODIFY = 0x05,  //  modify register
-    MCP251x_SPI_LOAD_TX = 0x40,     //  set register pointer to a point in either 3 of the transmit buffers. for quick access
-    MCP251x_SPI_READ_RX = 0x90,     //  set register pointer to a point in either 2 of the recieve buffers.
-    MCP251x_SPI_RX_STATUS = 0xB0    //  read rx status.
+    MCP251x_SPI_RESET = 0xC0,       //  Software reset
+    MCP251x_SPI_WRITE = 0x02,       //  Write register
+    MCP251x_SPI_READ = 0x03,        //  Read register
+    MCP251x_SPI_RTS = 0x80,         //  Request to send
+    MCP251x_SPI_READ_STATUS = 0xA0, //  Read status register
+    MCP251x_SPI_BIT_MODIFY = 0x05,  //  Modify register
+    MCP251x_SPI_LOAD_TX = 0x40,     //  Set register pointer to a point in either 3 of the transmit buffers. for quick access
+    MCP251x_SPI_READ_RX = 0x90,     //  Set register pointer to a point in either 2 of the recieve buffers.
+    MCP251x_SPI_RX_STATUS = 0xB0    //  Read rx status.
 } mcp251x_spi_cmd;
 
 typedef enum
 {
-    MCP251x_REG_RXF0SIDH = 0x00, //  Recieve buffer 0 - Standard Identfier Filter High Byte
-    MCP251x_REG_RXF0SIDL = 0x01, //  Recieve buffer 0 - Standard Identfier Filter Low Byte
-    MCP251x_REG_RXF0EID8 = 0x02,
-    MCP251x_REG_RXF0EID0 = 0x03,
+    MCP251x_REG_RXF0SIDH = 0x00, //  Recieve buffer 0 - Standard Identifier Filter High Byte
+    MCP251x_REG_RXF0SIDL = 0x01, //  Recieve buffer 0 - Standard Identifier Filter Low Byte
+    MCP251x_REG_RXF0EID8 = 0x02, //  Recieve buffer 0 - Extended Identifier Filter High Byte
+    MCP251x_REG_RXF0EID0 = 0x03, //  Recieve buffer 0 - Extended Identifier Filter Low Byte
 
-    MCP251x_REG_RXF1SIDH = 0x04,
-    MCP251x_REG_RXF1SIDL = 0x05,
-    MCP251x_REG_RXF1EID8 = 0x06,
-    MCP251x_REG_RXF1EID0 = 0x07,
+    MCP251x_REG_RXF1SIDH = 0x04, //  Recieve buffer 1 - Standard Identifier Filter High Byte
+    MCP251x_REG_RXF1SIDL = 0x05, //  Recieve buffer 1 - Standard Identifier Filter Low Byte
+    MCP251x_REG_RXF1EID8 = 0x06, //  Recieve buffer 1 - Extended Identifier Filter High Byte
+    MCP251x_REG_RXF1EID0 = 0x07, //  Recieve buffer 1 - Extended Identifier Filter Low Byte
 
-    MCP251x_REG_RXF2SIDH = 0x08,
-    MCP251x_REG_RXF2SIDL = 0x09,
-    MCP251x_REG_RXF2EID8 = 0x0A,
-    MCP251x_REG_RXF2EID0 = 0x0B,
+    MCP251x_REG_RXF2SIDH = 0x08, //  Recieve buffer 2 - Standard Identifier Filter High Byte
+    MCP251x_REG_RXF2SIDL = 0x09, //  Recieve buffer 2 - Standard Identifier Filter Low Byte
+    MCP251x_REG_RXF2EID8 = 0x0A, //  Recieve buffer 2 - Extended Identifier Filter High Byte
+    MCP251x_REG_RXF2EID0 = 0x0B, //  Recieve buffer 2 - Extended Identifier Filter Low Byte
 
-    MCP251x_REG_BFPCTRL = 0x0C, // Pin control & status register.
-    MCP251x_REG_TXRTSCTRL = 0x0D,
+    MCP251x_REG_BFPCTRL = 0x0C,   // Pin control & status register. Recieve buffer full pins. Output
+    MCP251x_REG_TXRTSCTRL = 0x0D, // Pin control & status register. Transmit buffer Request To Send pins. Input
 
     MCP251x_REG_CANSTAT = 0x0E, //  CAN Status
     MCP251x_REG_CANCTRL = 0x0F, //  CAN Control
 
-    MCP251x_REG_RXF3SIDH = 0x10,
-    MCP251x_REG_RXF3SIDL = 0x11,
-    MCP251x_REG_RXF3EID8 = 0x12,
-    MCP251x_REG_RXF3EID0 = 0x13,
+    MCP251x_REG_RXF3SIDH = 0x10, //  Recieve buffer 3 - Standard Identifier Filter High Byte
+    MCP251x_REG_RXF3SIDL = 0x11, //  Recieve buffer 3 - Standard Identifier Filter Low Byte
+    MCP251x_REG_RXF3EID8 = 0x12, //  Recieve buffer 3 - Extended Identifier Filter High Byte
+    MCP251x_REG_RXF3EID0 = 0x13, //  Recieve buffer 3 - Extended Identifier Filter Low Byte
 
-    MCP251x_REG_RXF4SIDH = 0x14,
-    MCP251x_REG_RXF4SIDL = 0x15,
-    MCP251x_REG_RXF4EID8 = 0x16,
-    MCP251x_REG_RXF4EID0 = 0x17,
+    MCP251x_REG_RXF4SIDH = 0x14, //  Recieve buffer 4 - Standard Identifier Filter High Byte
+    MCP251x_REG_RXF4SIDL = 0x15, //  Recieve buffer 4 - Standard Identifier Filter Low Byte
+    MCP251x_REG_RXF4EID8 = 0x16, //  Recieve buffer 4 - Extended Identifier Filter High Byte
+    MCP251x_REG_RXF4EID0 = 0x17, //  Recieve buffer 4 - Extended Identifier Filter Low Byte
 
-    MCP251x_REG_RXF5SIDH = 0x18,
-    MCP251x_REG_RXF5SIDL = 0x19,
-    MCP251x_REG_RXF5EID8 = 0x1A,
-    MCP251x_REG_RXF5EID0 = 0x1B,
+    MCP251x_REG_RXF5SIDH = 0x18, //  Recieve buffer 5 - Standard Identifier Filter High Byte
+    MCP251x_REG_RXF5SIDL = 0x19, //  Recieve buffer 5 - Standard Identifier Filter Low Byte
+    MCP251x_REG_RXF5EID8 = 0x1A, //  Recieve buffer 5 - Extended Identifier Filter High Byte
+    MCP251x_REG_RXF5EID0 = 0x1B, //  Recieve buffer 5 - Extended Identifier Filter Low Byte
 
     MCP251x_REG_TEC = 0x1C, //  Transmit Error Count
     MCP251x_REG_REC = 0x1D, //  Recieve Error Count
@@ -833,15 +833,16 @@ static void mcp251x_read_frame_buffer(MCP251x *device, int rxbn, can_frame *fram
 
 mcp251x_error mcp251x_read_frame(MCP251x *device, can_frame *frame)
 {
+    // Check status instruction to get full message buffers.
     uint8_t stat = mcp251x_read_status(device->config.spi_dev);
 
     //  Find a full buffer
     if (stat & 0x01)
-        mcp251x_read_frame_buffer(device, 0, frame);
+        mcp251x_read_frame_buffer(device, 0, frame); // Read buffer 0
     else if (stat & 0x02)
-        mcp251x_read_frame_buffer(device, 1, frame);
+        mcp251x_read_frame_buffer(device, 1, frame); // Read buffer 1
     else
-        return MCP251x_ERR_EMPTY; // No buffers ready
+        return MCP251x_ERR_EMPTY; // No buffers full.
 
     return MCP251x_ERR_SUCCESS;
 }
@@ -850,9 +851,11 @@ mcp251x_error mcp251x_read_all_frames(MCP251x *device,
                                       can_frame *frame_buffer,
                                       int *frame_count)
 {
+    // Check status instruction to get full message buffers.
     uint8_t stat = mcp251x_read_status(device->config.spi_dev);
     int frame_index = 0;
 
+    // If message availble in buffer, copy message into buffer and increase the frame_index;
     if (stat & 0x01)
     {
         mcp251x_read_frame_buffer(device, 0, frame_buffer + frame_index);
@@ -867,6 +870,7 @@ mcp251x_error mcp251x_read_all_frames(MCP251x *device,
 
     *frame_count = frame_index;
 
+    // Return success if frames were read.
     if (frame_index == 0)
         return MCP251x_ERR_EMPTY;
     else
@@ -875,13 +879,17 @@ mcp251x_error mcp251x_read_all_frames(MCP251x *device,
 
 void mcp251x_clear_rx_buffers(MCP251x *device)
 {
+    // Reset recieve buffer full interrupts, so the chip knows that the messages are dealt with.
     mcp251x_modify_register(device->config.spi_dev, MCP251x_REG_CANINTF, 3, 0);
 }
 
 uint8_t mcp251x_get_available_tx_buffer_count(MCP251x *device)
 {
+    // Check status instruction to get available transmit buffers.
     uint8_t stat = mcp251x_read_status(device->config.spi_dev);
     uint8_t count = 0;
+
+    // Loop over transmit request bits to see which buffers have been cleared.
     for (int i = 0; i < 3; ++i)
     {
         if ((stat & MCP251x_STATUS_TXREQ_MASK(i)) == 0)
